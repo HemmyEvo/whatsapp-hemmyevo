@@ -140,7 +140,7 @@ const TextMessage = ({ message }: any) => {
 			href={message.content}
 			target='_blank'
 			rel='noopener noreferrer'
-			className='mr-2 text-sm font-light text-blue-400 underline'
+			className='mr-2 text-sm font-light break-words text-blue-400 underline'
 		  >
 			{message.content} {/* Display the URL as a single line */}
 		  </a>

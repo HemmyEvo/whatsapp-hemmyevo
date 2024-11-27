@@ -7,7 +7,7 @@ import React, { useState } from 'react'
 type Props = React.PropsWithChildren<{
     title: string,
     action?: any,
-    search: Boolean,
+    search: boolean,
     placeholder?: string
 }>
 
