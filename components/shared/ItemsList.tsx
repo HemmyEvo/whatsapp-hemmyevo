@@ -1,5 +1,5 @@
 'use client'
-import { useChat } from '@/hooks/useChat'
+import { useCall, useChat } from '@/hooks/useChat'
 import { cn } from '@/lib/utils'
 import { Search, X } from 'lucide-react'
 import React, { useState } from 'react'
@@ -21,11 +21,13 @@ const ItemsList = ({ children, title, action, search, placeholder }: Props) => {
         setShowCancel(inputValue !== '')
     }
     const {isActive} = useChat()
+    const {callActive} = useCall()
+    const checkActive = isActive || callActive
 
     return (
         <div className={cn("hidden h-[100vh] w-full lg:w-[30%] border-r bg-[#dddddd] dark:bg-[#303030] dark:border-[#444444c7] border-[#a1a1a1c7] p-2",{
-            block: !isActive,
-            "lg:block": isActive
+            block: !checkActive,
+            "lg:block": checkActive
         })}>
             <header className='px-3 space-y-4'>
                 <nav className='flex justify-between items-center'>

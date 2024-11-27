@@ -6,6 +6,7 @@ import React from "react";
 import { BiPhone, BiVideo } from "react-icons/bi";
 import { BsSearch } from "react-icons/bs";
 import GroupMembersDialog from "./group-member-dialog";
+import Link from "next/link";
 
 const Head = ({ ChatDetails }: { ChatDetails: any }) => {
   const chatImage = ChatDetails?.groupImage || ChatDetails?.image;
@@ -39,9 +40,11 @@ const Head = ({ ChatDetails }: { ChatDetails: any }) => {
       {/* Action Buttons */}
       <div className="call-search flex items-center space-x-1">
         <div className="call dark:bg-[#464646] bg-[#aaaaaa] overflow-hidden rounded-md flex border border-[#757575] dark:border-[#575757]">
-          <button className="border-r border-[#575757] hover:bg-[#979797] dark:hover:bg-[#575757] text-[#474747] dark:text-[#d1d1d1] h-10 w-12 flex justify-center items-center">
+         <Link href={`/calls/${ChatDetails._id}`}>
+         <button className="border-r border-[#575757] hover:bg-[#979797] dark:hover:bg-[#575757] text-[#474747] dark:text-[#d1d1d1] h-10 w-12 flex justify-center items-center">
             <BiVideo className="w-6 h-6" />
           </button>
+          </Link> 
           <button className="h-10 w-12 flex justify-center hover:bg-[#979797] dark:hover:bg-[#575757] text-[#474747] dark:text-[#d1d1d1] items-center">
             <BiPhone className="w-6 h-6" />
           </button>
