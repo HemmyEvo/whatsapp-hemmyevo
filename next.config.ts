@@ -1,7 +1,23 @@
-import type { NextConfig } from "next";
+import { NextConfig } from 'next';
 
+/** @type {NextConfig} */
 const nextConfig: NextConfig = {
-  /* config options here */
+    async redirects() {
+        return [
+            {
+                source: "/",
+                destination: "/chat",
+                permanent: true,
+            },
+        ];
+    },
+    images: {
+        remotePatterns: [
+            {
+                hostname: "exciting-marlin-134.convex.cloud",
+            },
+        ],
+    },
 };
 
 export default nextConfig;
