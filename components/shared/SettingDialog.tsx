@@ -65,11 +65,11 @@ export default function SettingsDialog() {
 
           await clerkUser.setProfileImage({ file });
         }
-
-        setIsEditing(false);
       }
     } catch (error) {
       console.error("Failed to save settings:", error);
+    }finally{
+        setIsEditing(false);
     }
   };
 
@@ -171,7 +171,6 @@ export default function SettingsDialog() {
               )}
             </div>
           </div>
-          <DialogFooter></DialogFooter>
         </DialogContent>
       </Dialog>
     </>

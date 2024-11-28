@@ -11,25 +11,26 @@ import {
 } from "@/components/ui/dialog"; // Adjust this path based on your setup
 import { Button } from "@/components/ui/button"; // Adjust this path based on your setup
 import { useRouter } from "next/navigation";
+import { toast } from 'react-hot-toast';
+
 
 const DeleteButton = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const { user, signOut } = useClerk();
+  const { user } = useClerk();
   const router = useRouter();
 
   const handleDeleteAccount = async () => {
     setIsLoading(true);
     try {
       await user?.delete();
-      alert("Your account has been successfully deleted.");
-      setIsDialogOpen(false); // Close the dialog
-      router.push("/"); // Redirect to home page
+      toast.success("Your account has been successfully deleted.");
     } catch (error) {
       console.error("Failed to delete account:", error);
-      alert("There was an error deleting your account. Please try again.");
+      toast.error("There was an error deleting your account. Please try again.");
     } finally {
-      setIsLoading(false);
+        setIsDialogOpen(false);
+        router.push("/"); 
     }
   };
 
