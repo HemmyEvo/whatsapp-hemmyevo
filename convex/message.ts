@@ -46,6 +46,29 @@ export const sendTextMessage = mutation({
 
 	},
 });
+export const sendVoiceMsg = mutation({
+	args: { audioId: v.id("_storage"), sender: v.id("users"), conversation: v.id("conversations") },
+	handler: async (ctx, args) => {
+	  const identity = await ctx.auth.getUserIdentity();
+	  if (!identity) {
+		throw new ConvexError("Unauthorized");
+	  }
+  
+	  // Get the audio content URL using the storage ID
+	  const content = (await ctx.storage.getUrl(args.audioId)) as string;
+  
+	  // Insert the message into the database with the audio content
+	  await ctx.db.insert("messages", {
+		content: content,
+		sender: args.sender,
+		messageType: "audio", // Changed from "image" to "audio"
+		conversation: args.conversation,
+		status: false, // Assuming `status` is for message status, adjust as necessary
+	  });
+	},
+  });
+  
+  
 export const messageStatus = mutation({
 	args: {
 	  conversation: v.id("conversations"),

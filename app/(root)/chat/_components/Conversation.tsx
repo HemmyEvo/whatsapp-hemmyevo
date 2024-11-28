@@ -1,11 +1,12 @@
 import { formatDate } from "@/lib/utils";
-import { ImageIcon, VideoIcon } from "lucide-react";
+import {  ImageIcon, VideoIcon } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { MessageReceivedSvg, MessageSeenSvg, MessageSentSvg } from "@/lib/svgs";
 import Link from "next/link";
 import { useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { usePathname } from "next/navigation";
+import { BiMicrophone } from "react-icons/bi";
 
 const Conversation = ({ conversation }: { conversation: any }) => {
   const conversationImage = conversation.groupImage || conversation.image;
@@ -20,7 +21,6 @@ const Conversation = ({ conversation }: { conversation: any }) => {
     api.message.getMessages,
     conversation ? { conversation: conversation._id } : 'skip'
   );
-  const status = messages?.map(msg => msg)
   // Fetch the unread message count for this specific conversation
   const messageCount = useQuery(api.message.countUnreadMessages, {
     conversation: conversation._id,
@@ -79,6 +79,14 @@ const Conversation = ({ conversation }: { conversation: any }) => {
         </div>
       );
     }
+    if (lastMessageType === "audio") {
+      return (
+        <div className="flex items-center space-x-1">
+          <BiMicrophone size={14} />
+          <p>Audio</p>
+        </div>
+      );
+    }
 
     if (lastMessageType === "video") {
       return (
@@ -126,7 +134,7 @@ const Conversation = ({ conversation }: { conversation: any }) => {
         <div className="flex justify-between items-center">
           <div className="text-[12px] mt-1 text-gray-500 flex items-center gap-1">
             {
-            !conversation.isTyping.length && lastMessage?.sender === me?._id 
+           lastMessage?.sender === me?._id 
         ? (messages?.[messages.length - 1]?.status 
            ? <MessageReceivedSvg /> 
              : conversation.isOnline 

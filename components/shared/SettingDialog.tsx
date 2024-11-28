@@ -1,104 +1,179 @@
-import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle } from "@/components/ui/dialog"; // Replace with your dialog component
-import { Input } from "@/components/ui/input"; // Replace with your input component
-import { Button } from "@/components/ui/button"; // Replace with your button component
-import { useUser } from "@clerk/nextjs";
+import { useState, useEffect } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogFooter,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { FiSettings } from "react-icons/fi";
+import DeleteButton from "./DeleteDialog";
+import { useClerk, useUser } from "@clerk/nextjs";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function SettingsDialog() {
-    const user = useUser()
-    const [isOpen, setIsOpen] = useState(false);
-    const [username, setUsername] = useState(user?.user?.username || "");
-    const [email, setEmail] = useState(user?.user?.emailAddresses[0].emailAddress || "");
-    const [imageUrl, setImageUrl] = useState(user?.user?.imageUrl || "");
+  const { user: clerkUser } = useClerk(); // Clerk user methods
+  const { user } = useUser(); // Current authenticated user
 
-    const handleSave = async () => {
-        try {
-            // Update logic here (e.g., calling Clerk or Convex mutation)
-            console.log("Updated:", { username, email, imageUrl });
-            setIsOpen(false); // Close the dialog after saving
-        } catch (error) {
-            console.error("Failed to save settings:", error);
+  const [isOpen, setIsOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [fullName, setFullName] = useState("");
+  const [profileImage, setProfileImage] = useState("");
+
+  // Update state when `user` changes
+  useEffect(() => {
+    if (user) {
+      setUsername(user.username || "");
+      setEmail(user.primaryEmailAddress?.emailAddress || "");
+      setFullName(user.fullName || "");
+      setProfileImage(user.imageUrl || "");
+    }
+  }, [user]);
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        if (reader.result) setProfileImage(reader.result as string); // Temporary preview
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSave = async () => {
+    try {
+      if (clerkUser) {
+        await clerkUser.update({
+          username,
+          firstName: fullName.split(" ")[0] || fullName,
+          lastName: fullName.split(" ")[1] || "",
+        });
+
+        if (profileImage && profileImage !== user?.imageUrl) {
+          const file = await fetch(profileImage)
+            .then((res) => res.blob())
+            .then(
+              (blob) =>
+                new File([blob], "profile-image.png", { type: "image/png" })
+            );
+
+          await clerkUser.setProfileImage({ file });
         }
-    };
 
-    const handleDeleteAccount = async () => {
-        try {
-            // Delete account logic here
-            console.log("Account deleted");
-        } catch (error) {
-            console.error("Failed to delete account:", error);
-        }
-    };
+        setIsEditing(false);
+      }
+    } catch (error) {
+      console.error("Failed to save settings:", error);
+    }
+  };
 
-    return (
-        <>
-            <div onClick={() => setIsOpen(true)}>
-            <FiSettings className='w-5 h-5'/>
+  const handleCancel = () => {
+    setUsername(user?.username || "");
+    setEmail(user?.primaryEmailAddress?.emailAddress || "");
+    setFullName(user?.fullName || "");
+    setProfileImage(user?.imageUrl || "");
+    setIsEditing(false);
+  };
+
+  return (
+    <>
+      <div onClick={() => setIsOpen(true)} className="cursor-pointer">
+        <FiSettings className="w-5 h-5" />
+      </div>
+      <Dialog
+        open={isOpen}
+        onOpenChange={(open) => {
+          if (!open) setIsEditing(false);
+          setIsOpen(open);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Settings</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-6">
+            <div className="flex items-center space-x-4">
+              <Avatar className="w-12 h-12">
+                <AvatarImage src={profileImage} className="object-cover w-12 h-12" />
+                <AvatarFallback className="text-sm text-black dark:text-white">
+                  <Skeleton className="h-12 w-12 rounded-full" />
+                </AvatarFallback>
+              </Avatar>
+              {isEditing && (
+                <Input
+                  type="file"
+                  onChange={handleImageChange}
+                  accept="image/*"
+                />
+              )}
             </div>
-            <Dialog open={isOpen} onOpenChange={setIsOpen}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Settings</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                        {/* Username */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                Username
-                            </label>
-                            <Input
-                                type="text"
-                                value={username}
-                                onChange={(e) => setUsername(e.target.value)}
-                                placeholder="Enter your username"
-                            />
-                        </div>
-
-                        {/* Email */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                Email Address
-                            </label>
-                            <Input
-                                type="email"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                placeholder="Enter your email address"
-                            />
-                        </div>
-
-                        {/* Profile Image */}
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                                Profile Image URL
-                            </label>
-                            <Input
-                                type="url"
-                                value={imageUrl}
-                                onChange={(e) => setImageUrl(e.target.value)}
-                                placeholder="Paste the image URL"
-                            />
-                            {imageUrl && (
-                                <img src={imageUrl} alt="Profile Preview" className="mt-2 w-16 h-16 rounded-full" />
-                            )}
-                        </div>
-
-                        {/* Delete Account */}
-                        <div className="flex justify-end">
-                            <Button variant="destructive" onClick={handleDeleteAccount}>
-                                Delete Account
-                            </Button>
-                        </div>
-                    </div>
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsOpen(false)}>
-                            Cancel
-                        </Button>
-                        <Button onClick={handleSave}>Save</Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-        </>
-    );
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Full Name
+              </label>
+              {isEditing ? (
+                <Input
+                  type="text"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  placeholder="Enter your full name"
+                />
+              ) : (
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  {fullName || "Not provided"}
+                </p>
+              )}
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Username
+              </label>
+              {isEditing ? (
+                <Input
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="Enter your username"
+                />
+              ) : (
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  {username || "Not provided"}
+                </p>
+              )}
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Email Address
+              </label>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                {email || "Not provided"}
+              </p>
+            </div>
+            <div className="flex justify-between space-x-4">
+              {isEditing ? (
+                <>
+                  <Button onClick={handleSave}>Save Changes</Button>
+                  <Button variant="outline" onClick={handleCancel}>
+                    Cancel
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button onClick={() => setIsEditing(true)}>Edit Profile</Button>
+                  <DeleteButton />
+                </>
+              )}
+            </div>
+          </div>
+          <DialogFooter></DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
 }

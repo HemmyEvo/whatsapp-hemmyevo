@@ -1,5 +1,5 @@
 import { ConvexError, v } from "convex/values";
-import { internalMutation,query } from "./_generated/server";
+import { internalMutation,mutation,query } from "./_generated/server";
 
 export const createUser = internalMutation({
 	args: {
@@ -24,7 +24,11 @@ export const createUser = internalMutation({
 });
 
 export const updateUser = internalMutation({
-	args: { tokenIdentifier: v.string(), image: v.string() },
+	args: { tokenIdentifier: v.string(),
+		email: v.string(),
+		username: v.string(),
+		name: v.string(),
+		image: v.string() },
 	async handler(ctx, args) {
 		const user = await ctx.db
 			.query("users")
@@ -37,6 +41,9 @@ export const updateUser = internalMutation({
 
 		await ctx.db.patch(user._id, {
 			image: args.image,
+			email: args.email,
+			username: args.username,
+			name: args.name,
 		});
 	},
 });
@@ -139,3 +146,56 @@ export const getGroupMembers = query({
 		return groupMembers;
 	},
 });
+
+
+export const deleteUserAndRelatedData = internalMutation({
+	args: {
+	  tokenIdentifier: v.string(),
+	},
+	handler: async (ctx, args) => {
+	  const user = await ctx.db
+		.query("users")
+		.withIndex("by_tokenIdentifier", (q) => q.eq("tokenIdentifier", args.tokenIdentifier))
+		.unique();
+  
+	  if (!user) {
+		console.log("User not found for deletion:", args.tokenIdentifier);
+		return;
+	  }
+  
+	  // Delete all messages sent by the user
+	  const messages = await ctx.db
+		.query("messages")
+		.filter((q) => q.eq(q.field("sender"), user._id))
+		.collect();
+  
+	  for (const message of messages) {
+		await ctx.db.delete(message._id);
+	  }
+  
+	  // Fetch all conversations and filter for those the user participated in
+	  const conversations = await ctx.db.query("conversations").collect();
+	  const userConversations = conversations.filter((conversation) =>
+		conversation.participants.includes(user._id)
+	  );
+  
+	  for (const conversation of userConversations) {
+		const updatedParticipants = conversation.participants.filter((id) => id !== user._id);
+  
+		if (updatedParticipants.length === 2) {
+            await ctx.db.patch(conversation._id, {
+            participants: updatedParticipants,
+        
+        });
+        } else if (updatedParticipants.length === 1) {
+            await ctx.db.delete(conversation._id);
+        } else {
+            await ctx.db.patch(conversation._id, {
+            participants: updatedParticipants,
+        });
+        }
+	}
+	}
+  });
+  
+  

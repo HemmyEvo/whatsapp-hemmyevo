@@ -2,11 +2,12 @@ import { MessageReceivedSvg, MessageSeenSvg, MessageSentSvg } from "@/lib/svgs";
 import ChatBubbleAvatar from "./chat-bubble-avatar";
 import DateIndicator from "./date-indicator";
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {Dialog,  DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import ReactPlayer from "react-player";
-import { Bot } from "lucide-react";
+import { Bot, Mic, Pause, Play } from "lucide-react";
 import ChatAvatarActions from "./chat-avatar-actions";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const ChatBubble = ({ me, message, previousMessage, ChatDetails }: any) => {
 	const date = new Date(message._creationTime);
@@ -41,6 +42,19 @@ const ChatBubble = ({ me, message, previousMessage, ChatDetails }: any) => {
 		}
 	};
 
+	if(message.messageType === "audio" && fromMe){
+		return(
+			<>
+			<DateIndicator message={message} previousMessage={previousMessage} />
+			<div className='flex gap-1 w-2/3 ml-auto'>
+				<div className={`flex flex-col z-20 w-[100%] md:w-[70%] px-2 pt-1 ml-auto rounded-md shadow-md relative ${bgClass}`}>
+					<AudioMessage message={message} />
+				</div>
+			</div>
+			</>
+		)
+	}
+
 	if (!fromMe) {
 		return (
 			<>
@@ -59,7 +73,7 @@ const ChatBubble = ({ me, message, previousMessage, ChatDetails }: any) => {
 			</>
 		);
 	}
-
+	
 	return (
 		<>
 			<DateIndicator message={message} previousMessage={previousMessage} />
@@ -82,7 +96,7 @@ const VideoMessage = ({ message }: any) => {
 
 const ImageMessage = ({ message, handleClick }: any) => {
 	return (
-		<div className='w-[250px] h-[250px] m-2 relative'>
+		<div className='w-[250px] h-[250px] overflow-hidden relative'>
 			<Image
 				src={message.content}
 				fill
@@ -93,6 +107,116 @@ const ImageMessage = ({ message, handleClick }: any) => {
 		</div>
 	);
 };
+
+let currentAudio: HTMLAudioElement | null = null; // Keeps track of the currently playing audio
+
+const AudioMessage = ({ message }: any) => {
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [speed, setSpeed] = useState(1);
+
+  const togglePlay = () => {
+    if (audioRef.current) {
+      if (isPlaying) {
+        audioRef.current.pause();
+		setIsPlaying(!isPlaying)
+      } else {
+        // Pause currently playing audio (if any)
+        if (currentAudio && currentAudio !== audioRef.current) {
+			
+          currentAudio.pause();
+        }
+		setIsPlaying(false)
+        audioRef.current.play();
+        currentAudio = audioRef.current;
+      }
+      setIsPlaying(!isPlaying);
+    }
+  };
+
+  const handleTimeUpdate = () => {
+    if (audioRef.current) {
+      const current = audioRef.current.currentTime;
+      const total = audioRef.current.duration;
+      setCurrentTime(current);
+      setDuration(total);
+      setProgress((current / total) * 100);
+    }
+  };
+
+  const changeSpeed = () => {
+    if (audioRef.current) {
+      const newSpeed = speed === 2 ? 1 : speed + 0.5;
+      setSpeed(newSpeed);
+      audioRef.current.playbackRate = newSpeed;
+    }
+  };
+
+  const handleEnded = () => {
+    setIsPlaying(false);
+    setProgress(0);
+    setCurrentTime(0);
+  };
+
+  const handleLoadedMetadata = () => {
+    if (audioRef.current) {
+      setDuration(audioRef.current.duration);
+    }
+  };
+
+  return (
+    <div className="flex h-12 text-[#111B21] dark:text-[#E9EDEF] items-center px-3 space-x-3 w-full">
+    <div className="Profile">
+    {!isPlaying ? (
+      <Avatar className='overflow-visible relative'>
+      <Mic className="absolute bottom-1 h-4 w-4 right-1" />
+			<AvatarImage src={message.sender?.image} className='rounded-[100%] object-cover w-8 h-8' />
+			<AvatarFallback className='w-8 h-8 '>
+				<div className='animate-pulse bg-gray-tertiary rounded-[100%]'></div>
+			</AvatarFallback>
+		</Avatar>
+    )
+     : (
+      <button
+        onClick={changeSpeed}
+        className="text-sm flex justify-center bg-[#313131b6]  w-10 h-7 rounded-md items-center pointer-cursor font-medium dark:text-[#8696A0] text-[#25D366]"
+      >
+        {speed}x
+      </button>
+     )}
+    	
+    </div>
+    <div className="music-cont flex-1 flex items-center space-x-3">
+      <div className="buttonToggle flex items-center justify-center" onClick={togglePlay}>
+      {!isPlaying ? <Play className="w-5 h-5" /> : <Pause className="w-5 h-5" />}
+      </div>
+      <div className="waves">
+      </div>
+    </div>
+     {/* Audio Element */}
+      <audio
+        ref={audioRef}
+        onTimeUpdate={handleTimeUpdate}
+        src={message.content}
+        onLoadedMetadata={handleLoadedMetadata} // Set duration once loaded
+        onEnded={handleEnded}
+      ></audio>
+    </div>
+  );
+};
+
+function formatTime(seconds: number) {
+  if (isNaN(seconds)) return "0:00";
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
+}
+
+
+
 
 const ImageDialog = ({ src, onClose, open }: { open: boolean; src: string; onClose: () => void }) => {
 	return (

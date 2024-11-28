@@ -13,7 +13,7 @@ const ProfileDropdown = (props: Props) => {
         <DropdownMenu>
             <DropdownMenuTrigger className='outline-none'>
                 <Avatar className="w-7 h-7">
-                    <AvatarImage src={user?.user?.imageUrl} />
+                    <AvatarImage src={user?.user?.imageUrl} className="object-cover w-7 h-7" />
                     <AvatarFallback className="text-sm text-black dark:text-white">
                         <Skeleton className="h-12 w-12 rounded-full" />
                     </AvatarFallback>

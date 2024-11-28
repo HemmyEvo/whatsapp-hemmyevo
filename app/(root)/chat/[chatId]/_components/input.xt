@@ -1,0 +1,120 @@
+
+let currentAudio: HTMLAudioElement | null = null; // Keeps track of the currently playing audio
+
+const AudioMessage = ({ message, isDarkMode }: any) => {
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [speed, setSpeed] = useState(1);
+
+  const togglePlay = () => {
+    if (audioRef.current) {
+      if (isPlaying) {
+        audioRef.current.pause();
+      } else {
+        // Pause currently playing audio (if any)
+        if (currentAudio && currentAudio !== audioRef.current) {
+			setIsPlaying(!isPlaying)
+          currentAudio.pause();
+        }
+		setIsPlaying(false)
+        audioRef.current.play();
+        currentAudio = audioRef.current;
+      }
+      setIsPlaying(!isPlaying);
+    }
+  };
+
+  const handleTimeUpdate = () => {
+    if (audioRef.current) {
+      const current = audioRef.current.currentTime;
+      const total = audioRef.current.duration;
+      setCurrentTime(current);
+      setDuration(total);
+      setProgress((current / total) * 100);
+    }
+  };
+
+  const changeSpeed = () => {
+    if (audioRef.current) {
+      const newSpeed = speed === 2 ? 1 : speed + 0.5;
+      setSpeed(newSpeed);
+      audioRef.current.playbackRate = newSpeed;
+    }
+  };
+
+  const handleEnded = () => {
+    setIsPlaying(false);
+    setProgress(0);
+    setCurrentTime(0);
+  };
+
+  const handleLoadedMetadata = () => {
+    if (audioRef.current) {
+      setDuration(audioRef.current.duration);
+    }
+  };
+
+  return (
+    <div
+      className="flex bg-[#F0F2F5] h-10 text-[#111B21] dark:bg-[#2A3942] dark:text-[#E9EDEF] items-center px-2 rounded-lg w-[90%] max-w-[320px]"
+    >
+      {/* Play/Pause Button */}
+      <div
+        onClick={togglePlay}
+        className="w-10 dark:bg-[#3F4E58] bg-[#25D366] h-7 flex justify-center items-center   text-white"
+      >
+        {!isPlaying ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
+      </div>
+
+      {/* Audio Progress Section */}
+      <div className="flex-1 bg-gray-800 flex flex-col mx-3">
+        {/* Sound Wave */}
+        <div className="flex items-center gap-1">
+          {[...Array(30)].map((_, idx) => (
+            <div
+              key={idx}
+              className="w-1 rounded-full bg-[#25D366] dark:bg-[#8696A0]"
+              style={{
+                height: `${Math.random() * 10 + 3}px`, // Smaller height for wave
+                transition: "height 0.2s",
+              }}
+            ></div>
+          ))}
+        </div>
+
+        {/* Time Display */}
+        <div className="flex justify-between text-xs mt-1">
+          <span>{formatTime(currentTime)}</span>
+          <span>{formatTime(duration)}</span>
+        </div>
+      </div>
+
+      {/* Playback Speed */}
+      <button
+        onClick={changeSpeed}
+        className="text-sm font-medium dark:text-[#8696A0] text-[#25D366]"
+      >
+        {speed}x
+      </button>
+
+      {/* Audio Element */}
+      <audio
+        ref={audioRef}
+        onTimeUpdate={handleTimeUpdate}
+        src={message.content}
+        onLoadedMetadata={handleLoadedMetadata} // Set duration once loaded
+        onEnded={handleEnded}
+      ></audio>
+    </div>
+  );
+};
+
+function formatTime(seconds: number) {
+  if (isNaN(seconds)) return "0:00";
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
+}

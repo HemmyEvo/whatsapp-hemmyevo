@@ -39,9 +39,20 @@ http.route({
         case "user.updated": 
           await ctx.runMutation(internal.user.updateUser, {
             tokenIdentifier: `${process.env.CLERK_APP_DOMAIN}|${result.data.id}`,
+            email: result.data.email_addresses[0]?.email_address,
+            username: result.data.username ?? "",
+            name: `${result.data.first_name ?? "Guest"} ${result.data.last_name ?? ""}`,
             image: result.data.image_url,
           });
           break;
+
+        case "user.deleted": {
+          const tokenIdentifier = `${process.env.CLERK_APP_DOMAIN}|${result.data.id}`;
+          await ctx.runMutation(internal.user.deleteUserAndRelatedData, {
+            tokenIdentifier,
+          });
+          break;
+        }
         
         case "session.created":{
 			const lastSeen = result.data.last_active_at
