@@ -30,7 +30,7 @@ const DeleteButton = () => {
       toast.error("There was an error deleting your account. Please try again.");
     } finally {
         setIsDialogOpen(false);
-        router.push("/"); 
+        router.push("/sign-in"); 
     }
   };
 

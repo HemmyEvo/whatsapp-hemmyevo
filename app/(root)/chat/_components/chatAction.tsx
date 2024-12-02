@@ -12,14 +12,17 @@ import { useConvexAuth, useMutation, useQuery } from "convex/react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import Image from "next/image"
 import toast from "react-hot-toast"
+type FilterListProps = {
+  setActiveFilter: (filter: string | null) => void;
+};
 
-export const FilterList = () => {
+export const FilterList = ({ setActiveFilter }: FilterListProps) => {
   const lists = [
     { icon: <BiMessageRoundedDetail className="w-5 h-5" />, label: 'Unread' },
     { icon: <User2Icon className="w-5 h-5" />, label: 'Username' },
-    { icon: <BiGroup className="w-5 h-5" />, label: 'Groups' },
-    { icon: <PenIcon className="w-5 h-5" />, label: 'Draft' },
-  ]
+    { icon: <BiGroup className="w-5 h-5" />, label: 'Groups' }
+  ];
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -30,15 +33,27 @@ export const FilterList = () => {
       <DropdownMenuContent className="w-44">
         <DropdownMenuLabel className="text-sm text-gray-400">Filter chats by</DropdownMenuLabel>
         {lists.map((list, key) => (
-          <DropdownMenuItem key={key} className="flex items-center space-x-3">
+          <DropdownMenuItem
+            key={key}
+            className="flex items-center space-x-3"
+            onClick={() => setActiveFilter(list.label)}
+          >
             <div className="icons">{list.icon}</div>
             <div className="label">{list.label}</div>
           </DropdownMenuItem>
         ))}
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          onClick={() => setActiveFilter(null)}
+          className="flex items-center space-x-3"
+        >
+          <X className="w-4 h-4" />
+          <span>Clear Filter</span>
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
-  )
-}
+  );
+};
 
 export const NewChat = () => {
   const [value, setValue] = useState('')
@@ -212,10 +227,10 @@ export const NewChat = () => {
     </DropdownMenu>
   )
 }
-const ChatAction = () => {
+const ChatAction = ({ setActiveFilter }: any) => {
     const {isAuthenticated} = useConvexAuth()
   return (
-    <div className="flex space-x-2 items-center">  {isAuthenticated && <NewChat />}  <FilterList /> <ThemeToggle /> </div>
+    <div className="flex space-x-2 items-center">  {isAuthenticated && <NewChat />}  <FilterList setActiveFilter={setActiveFilter} /> <ThemeToggle /> </div>
   )
 }
 

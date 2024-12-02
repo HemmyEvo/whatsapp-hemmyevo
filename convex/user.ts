@@ -65,6 +65,28 @@ export const setUserOnline = internalMutation({
 		await ctx.db.patch(user._id, { isOnline: true });
 	},
 });
+export const setUsersOnline = mutation({
+	args: { lastSeen: v.number() },
+	handler: async (ctx, args) => {
+		const identity = await ctx.auth.getUserIdentity();
+		if (!identity) {
+			throw new ConvexError("Unauthorized");
+		}
+
+		const user = await ctx.db
+			.query("users")
+			.withIndex("by_tokenIdentifier", (q) => q.eq("tokenIdentifier", identity.tokenIdentifier))
+			.unique();
+
+		if (!user) {
+			throw new ConvexError("User not found");
+		}
+		if (user.lastSeen !== args.lastSeen) {
+		await ctx.db.patch(user._id, { lastSeen: args.lastSeen });
+		}
+		await ctx.db.patch(user._id, { isOnline: true });
+	},
+});
 
 
 
@@ -85,6 +107,29 @@ export const setUserOffline = internalMutation({
 		}
 
 			
+		await ctx.db.patch(user._id, { isOnline: false });
+	},
+});
+
+export const setUsersOffline = mutation({
+	args: { lastSeen: v.number() },
+	handler: async (ctx, args) => {
+		const identity = await ctx.auth.getUserIdentity();
+		if (!identity) {
+			throw new ConvexError("Unauthorized");
+		}
+
+		const user = await ctx.db
+			.query("users")
+			.withIndex("by_tokenIdentifier", (q) => q.eq("tokenIdentifier", identity.tokenIdentifier))
+			.unique();
+
+		if (!user) {
+			throw new ConvexError("User not found");
+		}
+		if (user.lastSeen !== args.lastSeen) {
+		await ctx.db.patch(user._id, { lastSeen: args.lastSeen });
+		}
 		await ctx.db.patch(user._id, { isOnline: false });
 	},
 });
@@ -162,7 +207,7 @@ export const deleteUserAndRelatedData = internalMutation({
 		console.log("User not found for deletion:", args.tokenIdentifier);
 		return;
 	  }
-  
+	  await ctx.db.delete(user._id)
 	  // Delete all messages sent by the user
 	  const messages = await ctx.db
 		.query("messages")
